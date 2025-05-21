@@ -25,12 +25,17 @@ function M.format_current_word(format_type)
 
 	local formatted = core.apply(format_type, word)
 
-	-- Replace the word under the cursor with formatted version
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
 	local line = vim.api.nvim_get_current_line()
-	local pattern = "\\V\\<" .. vim.fn.escape(word, "\\") .. "\\>"
-	local updated = line:gsub(pattern, formatted, 1)
 
+	-- Find the word boundaries
+	local start_col, end_col = line:find("%f[%w]" .. vim.pesc(word) .. "%f[%W]")
+	if not start_col then
+		return
+	end
+
+	-- Reconstruct the line
+	local updated = line:sub(1, start_col - 1) .. formatted .. line:sub(end_col + 1)
 	vim.api.nvim_set_current_line(updated)
 end
 
