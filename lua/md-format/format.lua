@@ -29,17 +29,19 @@ function M.format_current_word(format_type)
 
 	-- Find the match of the word that contains the cursor
 	local start_col, end_col = nil, nil
-	for s, e in line:gmatch("()(%f[%w]" .. vim.pesc(word) .. "%f[%W])()") do
-		if col + 1 >= s and col + 1 <= e - 1 then -- cursor is inside match
+	local pattern = "%f[%w](" .. vim.pesc(word) .. ")%f[%W]"
+	for s, match in line:gmatch("()(" .. vim.pesc(word) .. ")()") do
+		local e = s + #match - 1
+		if col + 1 >= s and col + 1 <= e then
 			start_col = s
-			end_col = e - 1
+			end_col = e
 			break
 		end
 	end
 
-	-- fallback: default to first match (if somehow cursor is not inside any)
+	-- fallback: default to first match
 	if not start_col then
-		start_col, end_col = line:find("%f[%w]" .. vim.pesc(word) .. "%f[%W]")
+		start_col, end_col = line:find(pattern)
 	end
 
 	if not start_col then
