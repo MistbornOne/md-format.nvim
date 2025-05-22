@@ -18,6 +18,8 @@ end
 
 -- Format in normal mode
 function M.format_current_word(format_type)
+	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+	local line = vim.api.nvim_get_current_line()
 	local word = vim.fn.expand("<cword>")
 	if not word or word == "" then
 		return
@@ -25,11 +27,21 @@ function M.format_current_word(format_type)
 
 	local formatted = core.apply(format_type, word)
 
-	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	local line = vim.api.nvim_get_current_line()
+	-- Find the match of the word that contains the cursor
+	local start_col, end_col = nil, nil
+	for s, e in line:gmatch("()(%f[%w]" .. vim.pesc(word) .. "%f[%W])()") do
+		if col + 1 >= s and col + 1 <= e - 1 then -- cursor is inside match
+			start_col = s
+			end_col = e - 1
+			break
+		end
+	end
 
-	-- Find the word boundaries
-	local start_col, end_col = line:find("%f[%w]" .. vim.pesc(word) .. "%f[%W]")
+	-- fallback: default to first match (if somehow cursor is not inside any)
+	if not start_col then
+		start_col, end_col = line:find("%f[%w]" .. vim.pesc(word) .. "%f[%W]")
+	end
+
 	if not start_col then
 		return
 	end
